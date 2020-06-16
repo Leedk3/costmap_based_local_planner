@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>costmap_based_local_planner</name>
+  <version>1.12.0</version>
+  <description>The costmap_based_local_planner package</description>
+  <maintainer email="lee.dk@kaist.ac.kr">ando</maintainer>
+  <license>BSD</license>
+
+  <!--buildtool_depend>autoware_build_flags</buildtool_depend-->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>autoware_msgs</depend>
+  <depend>grid_map_ros</depend>
+  <depend>object_map</depend>
+  <depend>pcl_ros</depend>
+  <depend>roscpp</depend>
+  <depend>tf</depend>
+  <depend>vector_map</depend>
+  <depend>op_planner</depend>
+  <depend>op_ros_helpers</depend>
+  <depend>op_utility</depend>
+  <depend>lanelet2_extension</depend>
+</package>
