@@ -249,7 +249,7 @@ void CollisionChecker::CalculateCost(const nav_msgs::OccupancyGrid& Grid, const 
   }
   // pub_occupied_grid_.publish(m_occupied_grid_markers);
 
-  std::cout << "-------------------------------------" <<std::endl;
+  // std::cout << "-------------------------------------" <<std::endl;
   int once = -1;
   int marker_id_ = 0;
   for (int k =0; k < (int)m_Obstacles.size(); k++)
@@ -336,9 +336,9 @@ void CollisionChecker::NormalizeCost(
     // std::cout << "i: " << i <<",  Curvature: " << curvature_cost_ << " ,IntegCurvature: "<< m_IntegCurvatureCost << std::endl;
     // std::cout << "i: " << i <<",  Collision: " << collision_cost_ << std::endl;
     // std::cout << "i: " << i <<",  Trasition: " << trasition_cost_ << " ,IntegTrasition: "<< m_IntegTrasitionCost  << std::endl;
-    std::cout << "Cost of Path num[" << i <<"] : " << *(m_RollOutCost_ptr + i) <<  "block : " <<  *(m_PathBlocked_ptr + i) << std::endl;
+    // std::cout << "Cost of Path num[" << i <<"] : " << *(m_RollOutCost_ptr + i) <<  "block : " <<  *(m_PathBlocked_ptr + i) << std::endl;
   }
-  std::cout << "minimum distance: " << m_minimum_distance_to_obstacle << ", All Path Blocked? : "<< m_AllPathBlocked <<std::endl;
+  // std::cout << "minimum distance: " << m_minimum_distance_to_obstacle << ", All Path Blocked? : "<< m_AllPathBlocked <<std::endl;
 }
 
 void CollisionChecker::BestPath(const autoware_msgs::LaneArray &GlobalPathCandidates, double* CostArray, bool* BlockedArray,

@@ -178,8 +178,8 @@ void BehaviorPlanner::ReplanIfColliding(const autoware_msgs::Lane& CurrentLane)
         if (dist_from_path_to_obstacle < m_obstacle_padding)
         {
           bCurrentPathColliding = true;
-          std::cout << "minimum index: " << m_FinalPathCost_ptr->lane_index << std::endl;
-          std::cout << "bCurrentPathColliding: "<< bCurrentPathColliding << std::endl;
+          // std::cout << "minimum index: " << m_FinalPathCost_ptr->lane_index << std::endl;
+          // std::cout << "bCurrentPathColliding: "<< bCurrentPathColliding << std::endl;
         }
       }
 
@@ -240,8 +240,8 @@ void BehaviorPlanner::AllPathBlockedSituation()
         BlockedPoseBefore.pos.x = BlockedPoseBeforeLocal.position.x;
         BlockedPoseBefore.pos.y = BlockedPoseBeforeLocal.position.y;
 
-        std::cout << " BlockedPoseNext.pos.x: " <<  BlockedPoseNext.pos.x << ", BlockedPoseNext.pos.y:" << BlockedPoseNext.pos.y << std::endl;
-        std::cout << " BlockedPoseBefore.pos.x: " <<  BlockedPoseBefore.pos.x << ", BlockedPoseBefore.pos.y:" << BlockedPoseBefore.pos.y << std::endl;
+        // std::cout << " BlockedPoseNext.pos.x: " <<  BlockedPoseNext.pos.x << ", BlockedPoseNext.pos.y:" << BlockedPoseNext.pos.y << std::endl;
+        // std::cout << " BlockedPoseBefore.pos.x: " <<  BlockedPoseBefore.pos.x << ", BlockedPoseBefore.pos.y:" << BlockedPoseBefore.pos.y << std::endl;
         found_ = true;  
       }
     }
