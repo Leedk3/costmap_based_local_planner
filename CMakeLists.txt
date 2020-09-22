@@ -18,11 +18,12 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 
-
 set(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
 #set(CMAKE_CXX_FLAGS "-W -Wall -O3 -std=c++1z -DNDEBUG")
 
 find_package(Boost REQUIRED COMPONENTS system)
+
+
 #CUDA setting
 find_package(CUDA REQUIRED)
 set(CUDA_NVCC_FLAGS "-arch=sm_30" CACHE STRING "nvcc flags" FORCE)
@@ -80,6 +81,24 @@ target_link_libraries(behavior_planner_node
 )
 
 
+add_library(
+  trajectory_generate
+  src/trajectory_generate/trajectory_generate.cpp
+)
+
+add_executable(trajectory_generate_node 
+src/trajectory_generate/trajectory_generate_node.cpp)
+
+add_dependencies(trajectory_generate_node 
+   ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+   ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(trajectory_generate_node
+   trajectory_generate
+   ${catkin_LIBRARIES}
+)
+
 
 install(
   TARGETS 
@@ -95,7 +114,13 @@ install(
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
+install(
+  TARGETS 
+  trajectory_generate_node
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
