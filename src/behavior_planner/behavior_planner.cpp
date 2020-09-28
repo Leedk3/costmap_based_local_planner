@@ -163,7 +163,7 @@ void BehaviorPlanner::SendLocalPlanningTopics()
     m_AccumulatedPose = 0;
   }
   lane = m_UpdatedLane;
-  pub_LocalPath.publish(lane); // local piece of global waypoints
+  pub_LocalPath.publish(lane); // piece of global waypoints
 
   autoware_msgs::Lane temp_global_local_lane;
   HoldLocalPathInGlobalFrame(m_UpdatedLane, temp_global_local_lane, m_VehiclePoseLocalPathRef, m_VehiclePoseCurrent);
@@ -174,7 +174,7 @@ void BehaviorPlanner::SendLocalPlanningTopics()
  * @brief: local(m_VehiclePoseLocalPathRef = m_VehiclePoseCurrent) -> global(m_VehiclePoseCurrent) -> local(m_VehiclePoseCurrent)
  */
 void BehaviorPlanner::HoldLocalPathInGlobalFrame(const autoware_msgs::Lane& CurrentLane, autoware_msgs::Lane& temp_global_local_lane, 
-                                                  const PlannerHNS::WayPoint& posePrev, const PlannerHNS::WayPoint& poseCurrent){
+                                                  const PlannerHNS::WayPoint& poseLocalRef, const PlannerHNS::WayPoint& poseCurrent){
   // convert m_UpdatedLane to global frame with m_VehiclePoseLocalPathRef(local->global)
   autoware_msgs::Lane temp_global_lane;
   temp_global_lane.header.frame_id = "odom";
@@ -187,8 +187,8 @@ void BehaviorPlanner::HoldLocalPathInGlobalFrame(const autoware_msgs::Lane& Curr
     // TODO: turn frame_id variable
     waypoint.pose.header.frame_id = temp_global_lane.header.frame_id;
     // (local->global)
-    waypoint.pose.pose.position.x = local_wpt_x * cos(posePrev.pos.a) - local_wpt_y * sin(posePrev.pos.a) + posePrev.pos.x;
-    waypoint.pose.pose.position.y = local_wpt_x * sin(posePrev.pos.a) + local_wpt_y * cos(posePrev.pos.a) + posePrev.pos.y;
+    waypoint.pose.pose.position.x = local_wpt_x * cos(poseLocalRef.pos.a) - local_wpt_y * sin(poseLocalRef.pos.a) + poseLocalRef.pos.x;
+    waypoint.pose.pose.position.y = local_wpt_x * sin(poseLocalRef.pos.a) + local_wpt_y * cos(poseLocalRef.pos.a) + poseLocalRef.pos.y;
     temp_global_lane.waypoints.push_back(waypoint);
   }
 
