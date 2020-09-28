@@ -11,6 +11,7 @@ BehaviorPlanner::BehaviorPlanner() : nh_(""), private_nh_("~")
   private_nh_.param("obstacle_padding", m_obstacle_padding, double(2));
 
   pub_LocalPath = nh_.advertise<autoware_msgs::Lane>("final_waypoints", 1,true);
+  pub_LocalCoordPath = nh_.advertise<autoware_msgs::Lane>("final_waypoints/local_coordinate", 1,true);
   pub_BehaviorState = nh_.advertise<geometry_msgs::TwistStamped>("current_behavior", 1);
   pub_BehaviorStateRviz = nh_.advertise<visualization_msgs::MarkerArray>("behavior_state", 1);
   pub_BlockedScreen = nh_.advertise<visualization_msgs::Marker>("blocked_screen",1);
@@ -43,8 +44,14 @@ void BehaviorPlanner::init()
   
   m_VehiclePosePrev.pos.x = 0;
   m_VehiclePosePrev.pos.y = 0;
+  m_VehiclePosePrev.pos.a = 0; // sw: temporary using for yaw angle(rad)
   m_VehiclePoseCurrent.pos.x = 0;
   m_VehiclePoseCurrent.pos.y = 0;
+  m_VehiclePoseCurrent.pos.a = 0; // sw: temporary using for yaw angle(rad)
+  m_VehiclePoseLocalPathRef.pos.x = 0;
+  m_VehiclePoseLocalPathRef.pos.y = 0;
+  m_VehiclePoseLocalPathRef.pos.a = 0; // sw: temporary using for yaw angle(rad)
+
   m_AccumulatedPose = 0;
   m_MinimumCostIndex = -1;
 }
@@ -146,13 +153,66 @@ void BehaviorPlanner::SendLocalPlanningTopics()
   
   m_MinimumCostIndex = m_FinalPathCost_ptr->lane_index;
 
+  // sw: cf@m_AccumulatedPose
   if (m_AccumulatedPose > m_local_update_horizon || bCurrentPathColliding)
   {
     m_UpdatedLane = m_LaneArray_ptr ->lanes.at(m_FinalPathCost_ptr->lane_index);
+    m_VehiclePoseLocalPathRef.pos.x = m_VehiclePoseCurrent.pos.x;
+    m_VehiclePoseLocalPathRef.pos.y = m_VehiclePoseCurrent.pos.y;
+    m_VehiclePoseLocalPathRef.pos.a = m_VehiclePoseCurrent.pos.a;
     m_AccumulatedPose = 0;
   }
   lane = m_UpdatedLane;
-  pub_LocalPath.publish(lane);
+  pub_LocalPath.publish(lane); // piece of global waypoints
+
+  autoware_msgs::Lane temp_global_local_lane;
+  HoldLocalPathInGlobalFrame(m_UpdatedLane, temp_global_local_lane, m_VehiclePoseLocalPathRef, m_VehiclePoseCurrent);
+  pub_LocalCoordPath.publish(temp_global_local_lane); // local coordinate local waypoints
+}
+
+/* 
+ * @brief: local(m_VehiclePoseLocalPathRef = m_VehiclePoseCurrent) -> global(m_VehiclePoseCurrent) -> local(m_VehiclePoseCurrent)
+ */
+void BehaviorPlanner::HoldLocalPathInGlobalFrame(const autoware_msgs::Lane& CurrentLane, autoware_msgs::Lane& temp_global_local_lane, 
+                                                  const PlannerHNS::WayPoint& poseLocalRef, const PlannerHNS::WayPoint& poseCurrent){
+  // convert m_UpdatedLane to global frame with m_VehiclePoseLocalPathRef(local->global)
+  autoware_msgs::Lane temp_global_lane;
+  temp_global_lane.header.frame_id = "odom";
+  int waypoint_length = CurrentLane.waypoints.size(); // uint into int
+  for (int i = 0; i < waypoint_length; i++){
+    double local_wpt_x = CurrentLane.waypoints[i].pose.pose.position.x;
+    double local_wpt_y = CurrentLane.waypoints[i].pose.pose.position.y;
+    autoware_msgs::Waypoint waypoint;
+    waypoint.pose.header.stamp    = CurrentLane.header.stamp;
+    // TODO: turn frame_id variable
+    waypoint.pose.header.frame_id = temp_global_lane.header.frame_id;
+    // (local->global)
+    waypoint.pose.pose.position.x = local_wpt_x * cos(poseLocalRef.pos.a) - local_wpt_y * sin(poseLocalRef.pos.a) + poseLocalRef.pos.x;
+    waypoint.pose.pose.position.y = local_wpt_x * sin(poseLocalRef.pos.a) + local_wpt_y * cos(poseLocalRef.pos.a) + poseLocalRef.pos.y;
+    temp_global_lane.waypoints.push_back(waypoint);
+  }
+
+  // convert back to local frame centered at m_VehiclePoseCurrent(global->local)
+  autoware_msgs::Lane temp_local_lane;
+  temp_local_lane.header.frame_id = "base_link";
+  for (int i = 0; i < waypoint_length; i++){
+    double global_wpt_x = temp_global_lane.waypoints[i].pose.pose.position.x;
+    double global_wpt_y = temp_global_lane.waypoints[i].pose.pose.position.y;
+    autoware_msgs::Waypoint waypoint;
+    waypoint.pose.header.stamp    = temp_global_lane.header.stamp;
+    // TODO: turn frame_id variable
+    waypoint.pose.header.frame_id = temp_local_lane.header.frame_id;
+    // (global->local)
+    waypoint.pose.pose.position.x = (global_wpt_x - poseCurrent.pos.x) * cos(-poseCurrent.pos.a)
+                                    - (global_wpt_y - poseCurrent.pos.y) * sin(-poseCurrent.pos.a);
+    waypoint.pose.pose.position.y = (global_wpt_x - poseCurrent.pos.x) * sin(-poseCurrent.pos.a)
+                                    + (global_wpt_y - poseCurrent.pos.y) * cos(-poseCurrent.pos.a);
+    temp_local_lane.waypoints.push_back(waypoint);
+  }
+  // TODO sw: turn the two transforms (l->g, g->l) into a single transform.
+  // https://kaistackr-my.sharepoint.com/personal/seungwook1024_kaist_ac_kr/_layouts/15/Doc.aspx?sourcedoc={b23cfce8-9f17-4c2e-add4-b0e1de1fb6c1}&action=edit&wd=target%28%EA%B0%9C%EC%9D%B8%EC%97%B0%EA%B5%AC.one%7C49ee15d7-dd1c-4ad3-a940-da1f33d54bfa%2FHold%20local%20path%20algorithm%7Cdca3394f-adf6-364f-aa25-51634ca38ea3%2F%29&wdorigin=703
+  temp_global_local_lane = temp_local_lane;
+
 }
 
 void BehaviorPlanner::ReplanIfColliding(const autoware_msgs::Lane& CurrentLane)
@@ -193,17 +253,17 @@ void BehaviorPlanner::GetPoseAccumulated()
   
   m_VehiclePoseCurrent.pos.x = m_Odometry_ptr->pose.pose.position.x;
   m_VehiclePoseCurrent.pos.y = m_Odometry_ptr->pose.pose.position.y;
+  double roll, pitch, yaw;
+  quarternionToRPY(m_Odometry_ptr->pose.pose.orientation, roll, pitch, yaw);
+  m_VehiclePoseCurrent.pos.a = yaw;
 
   if (m_VehiclePosePrev.pos.x != 0 && m_VehiclePosePrev.pos.y != 0){
-    m_AccumulatedPose = m_AccumulatedPose + 
-                      sqrt(pow(m_VehiclePoseCurrent.pos.x - m_VehiclePosePrev.pos.x, 2) + 
-                      pow(m_VehiclePoseCurrent.pos.y - m_VehiclePosePrev.pos.y, 2));
-
+    m_AccumulatedPose = m_AccumulatedPose +
+                        sqrt(pow(m_VehiclePoseCurrent.pos.x - m_VehiclePosePrev.pos.x, 2) + 
+                             pow(m_VehiclePoseCurrent.pos.y - m_VehiclePosePrev.pos.y, 2));
   }
-  // std::cout << "m_AccumulatedPose: " << m_AccumulatedPose << std::endl;
   m_VehiclePosePrev.pos.x = m_VehiclePoseCurrent.pos.x;
   m_VehiclePosePrev.pos.y = m_VehiclePoseCurrent.pos.y;
-
 }
 
 void BehaviorPlanner::AllPathBlockedSituation()
