@@ -11,6 +11,7 @@ BehaviorPlanner::BehaviorPlanner() : nh_(""), private_nh_("~")
   private_nh_.param("obstacle_padding", m_obstacle_padding, double(2));
 
   pub_LocalPath = nh_.advertise<autoware_msgs::Lane>("final_waypoints", 1,true);
+  pub_LocalCoordPath = nh_.advertise<autoware_msgs::Lane>("final_waypoints/local_coordinate", 1,true);
   pub_BehaviorState = nh_.advertise<geometry_msgs::TwistStamped>("current_behavior", 1);
   pub_BehaviorStateRviz = nh_.advertise<visualization_msgs::MarkerArray>("behavior_state", 1);
   pub_BlockedScreen = nh_.advertise<visualization_msgs::Marker>("blocked_screen",1);
@@ -161,17 +162,16 @@ void BehaviorPlanner::SendLocalPlanningTopics()
     m_VehiclePoseLocalPathRef.pos.a = m_VehiclePoseCurrent.pos.a;
     m_AccumulatedPose = 0;
   }
+  lane = m_UpdatedLane;
+  pub_LocalPath.publish(lane); // local piece of global waypoints
 
   autoware_msgs::Lane temp_global_local_lane;
-  
   HoldLocalPathInGlobalFrame(m_UpdatedLane, temp_global_local_lane, m_VehiclePoseLocalPathRef, m_VehiclePoseCurrent);
-  pub_LocalPath.publish(temp_global_local_lane);
+  pub_LocalCoordPath.publish(temp_global_local_lane); // local coordinate local waypoints
 }
 
 /* 
- * sw: hold should be done with global waypoints
  * @brief: local(m_VehiclePoseLocalPathRef = m_VehiclePoseCurrent) -> global(m_VehiclePoseCurrent) -> local(m_VehiclePoseCurrent)
- * 
  */
 void BehaviorPlanner::HoldLocalPathInGlobalFrame(const autoware_msgs::Lane& CurrentLane, autoware_msgs::Lane& temp_global_local_lane, 
                                                   const PlannerHNS::WayPoint& posePrev, const PlannerHNS::WayPoint& poseCurrent){
@@ -258,8 +258,9 @@ void BehaviorPlanner::GetPoseAccumulated()
   m_VehiclePoseCurrent.pos.a = yaw;
 
   if (m_VehiclePosePrev.pos.x != 0 && m_VehiclePosePrev.pos.y != 0){
-    m_AccumulatedPose += sqrt(pow(m_VehiclePoseCurrent.pos.x - m_VehiclePosePrev.pos.x, 2) + 
-                              pow(m_VehiclePoseCurrent.pos.y - m_VehiclePosePrev.pos.y, 2));
+    m_AccumulatedPose = m_AccumulatedPose +
+                        sqrt(pow(m_VehiclePoseCurrent.pos.x - m_VehiclePosePrev.pos.x, 2) + 
+                             pow(m_VehiclePoseCurrent.pos.y - m_VehiclePosePrev.pos.y, 2));
   }
   m_VehiclePosePrev.pos.x = m_VehiclePoseCurrent.pos.x;
   m_VehiclePosePrev.pos.y = m_VehiclePoseCurrent.pos.y;

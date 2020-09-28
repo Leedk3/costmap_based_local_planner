@@ -90,6 +90,7 @@ private:
   ros::NodeHandle private_nh_;
 
   ros::Publisher pub_LocalPath;
+  ros::Publisher pub_LocalCoordPath;
   ros::Publisher pub_BehaviorState;
   ros::Publisher pub_BehaviorStateRviz;
   ros::Publisher pub_BlockedScreen;
