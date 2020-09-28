@@ -130,6 +130,7 @@ private:
   double m_obstacle_padding;
   PlannerHNS::WayPoint m_VehiclePosePrev;
   PlannerHNS::WayPoint m_VehiclePoseCurrent;
+  PlannerHNS::WayPoint m_VehiclePoseLocalPathRef;
 
   double* m_RollOutCost_ptr;
 
@@ -139,6 +140,9 @@ private:
   void initCost();
   void finalize();
   void GetPoseAccumulated();
+  // temp_global_local_lane: temporally global, local lane
+  void HoldLocalPathInGlobalFrame(const autoware_msgs::Lane& CurrentLane, autoware_msgs::Lane& temp_global_local_lane, 
+                                    const PlannerHNS::WayPoint& posePrev, const PlannerHNS::WayPoint& poseCurrent);
   void SendLocalPlanningTopics();
   void AllPathBlockedSituation();
   void ReplanIfColliding(const autoware_msgs::Lane& CurrentLane);
@@ -158,7 +162,16 @@ private:
 
     return ros_pose;
   }
-
+  // sw: quaternion to rpy. source: https://gist.github.com/marcoarruda/f931232fe3490b7fa20dbb38da1195ac
+  inline void quarternionToRPY(const geometry_msgs::Quaternion& msg, double& roll, double& pitch, double& yaw){
+    tf::Quaternion q(
+        msg.x,
+        msg.y,
+        msg.z,
+        msg.w);
+    tf::Matrix3x3 m(q);
+    m.getRPY(roll, pitch, yaw);
+  }
 };
 
 #endif  // COSTMAP_BASED_BEHAVIOR_PLANNER_H
