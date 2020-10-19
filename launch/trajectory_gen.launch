@@ -1,0 +1,42 @@
+<!-- -->
+<launch>
+  
+  <arg name="enableLaneChange"       default="false" />   
+  <arg name="microPlanDistance"      default="35.0" />
+  <arg name="maxVelocity"            default="6.0" />
+  <arg name="minVelocity"            default="0.1" />  
+  <arg name="carTipMargin"           default="4"  /> 
+  <arg name="rollInMargin"           default="16" /> 
+  <arg name="rollInSpeedFactor"      default="0.25" />  
+  <arg name="pathDensity"            default="0.5" />
+  <arg name="rollOutDensity"         default="0.5" /> <!-- rollOut density: lateral distance of the end point in the path candidates-->
+  <arg name="rollOutsNumber"         default="6"    />
+  <arg name="smoothingDataWeight"    default="0.45"  />
+  <!-- <arg name="smoothingSmoothWeight"  default="0.4"  />   -->
+  <arg name="smoothingSmoothWeight"  default="0.05"  />  
+  <arg name="speedProfileFactor"     default="1.2"  />
+  <arg name="horizonDistance"        default="100"  />
+  <arg name="enableHeadingSmoothing"   default="false" />
+  
+
+  <node pkg="costmap_based_local_planner" type="trajectory_generate_node" name="trajectory_generate_node" output="screen">
+  
+    <param name="enableLaneChange"        value="$(arg enableLaneChange)" /> 
+    <param name="microPlanDistance"       value="$(arg microPlanDistance)" />
+    <param name="maxVelocity"             value="$(arg maxVelocity)" />
+    <param name="minVelocity"             value="$(arg minVelocity)" />
+    <param name="carTipMargin"            value="$(arg carTipMargin)" /> 
+    <param name="rollInMargin"            value="$(arg rollInMargin)" /> 
+    <param name="rollInSpeedFactor"       value="$(arg rollInSpeedFactor)" />
+    <param name="pathDensity"             value="$(arg pathDensity)" />
+    <param name="rollOutDensity"          value="$(arg rollOutDensity)" />
+    <param name="rollOutsNumber"          value="$(arg rollOutsNumber)" /> 
+    <param name="smoothingDataWeight"     value="$(arg smoothingDataWeight)" />
+    <param name="smoothingSmoothWeight"   value="$(arg smoothingSmoothWeight)" />
+    <param name="speedProfileFactor"      value="$(arg speedProfileFactor)" />
+    <param name="horizonDistance"         value="$(arg horizonDistance)" /> 
+    <param name="enableHeadingSmoothing"  value="$(arg enableHeadingSmoothing)" /> 
+
+  </node>        
+      
+</launch>

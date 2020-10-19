@@ -5,7 +5,7 @@
   <arg name="obstacle_radius"        default="0.6"/>
   <arg name="collision_cost"         default="10"/>
   <arg name="curvature_cost"         default="100" />
-  <arg name="trasition_cost"       default="10" />
+  <arg name="trasition_cost"         default="10" />
   <arg name="weight_curvature"       default="1" />
   <arg name="weight_trasition"       default="0.5" />
   <arg name="weight_consistancy"     default="0.5" />
@@ -13,7 +13,7 @@
   <arg name="path_block_threshold"   default="2.0" />
   <!-- param for behavior planner node -->
   <arg name="local_update_horizon"   default="15.0" />
-  <arg name="obstacle_padding"        default="0.6"/>
+  <arg name="obstacle_padding"       default="0.6"/>
 
   
   
@@ -24,7 +24,7 @@
 
     <param name="collision_cost"           value="$(arg collision_cost)"/>
     <param name="curvature_cost"           value="$(arg curvature_cost)" />
-    <param name="trasition_cost"         value="$(arg trasition_cost)" />
+    <param name="trasition_cost"           value="$(arg trasition_cost)" />
 
     <param name="weight_curvature"         value="$(arg weight_curvature)" />
     <param name="weight_trasition"         value="$(arg weight_trasition)" />
@@ -34,9 +34,9 @@
   </node>
 
   <node pkg="costmap_based_local_planner" type="behavior_planner_node" name="behavior_planner_node" output="screen">   
-    <param name="base_frame_id"            value="$(arg base_frame_id)"/> 
+    <param name="base_frame_id"             value="$(arg base_frame_id)"/> 
     <param name="obstacle_padding"          value="$(arg obstacle_padding)"/>
-    <param name="local_update_horizon"     value="$(arg local_update_horizon)" />
+    <param name="local_update_horizon"      value="$(arg local_update_horizon)" />
   </node>
 
 </launch>
