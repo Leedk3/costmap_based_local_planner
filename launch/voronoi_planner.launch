@@ -2,7 +2,7 @@
 <launch>
   
   <arg name="enableLaneChange"       default="false" />   
-  <arg name="microPlanDistance"      default="35.0" />
+  <arg name="microPlanDistance"      default="1.0" />
   <arg name="maxVelocity"            default="6.0" />
   <arg name="minVelocity"            default="0.1" />  
   <arg name="carTipMargin"           default="4"  /> 
@@ -10,7 +10,7 @@
   <arg name="rollInSpeedFactor"      default="0.25" />  
   <arg name="pathDensity"            default="0.5" />
   <arg name="rollOutDensity"         default="0.5" /> <!-- rollOut density: lateral distance of the end point in the path candidates-->
-  <arg name="rollOutsNumber"         default="6"    />
+  <arg name="rollOutsNumber"         default="3"    />
   <arg name="smoothingDataWeight"    default="0.45"  />
   <!-- <arg name="smoothingSmoothWeight"  default="0.4"  />   -->
   <arg name="smoothingSmoothWeight"  default="0.05"  />  
