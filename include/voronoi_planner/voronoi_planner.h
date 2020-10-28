@@ -16,12 +16,14 @@
 #include <visualization_msgs/Marker.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/filters/extract_indices.h>
-
+#include <ackermann_msgs/AckermannDriveStamped.h>
 // headers in STL
 #include <memory>
 #include <cmath>
 #include <type_traits>
 #include <stdio.h>
+
+#include <opencv/cv.h>
 
 // headers in Boost Library
 #include <boost/polygon/voronoi.hpp>
@@ -129,6 +131,47 @@ int iterate_primary_edges3(const voronoi_diagram<double> &vd) {
 }
 
 
+/*
+    * A point cloud type that has "ring" channel
+    */
+struct PointXYZIR
+{
+    PCL_ADD_POINT4D
+    PCL_ADD_INTENSITY;
+    uint16_t ring;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
+
+POINT_CLOUD_REGISTER_POINT_STRUCT (PointXYZIR,  
+                                   (float, x, x) (float, y, y)
+                                   (float, z, z) (float, intensity, intensity)
+                                   (uint16_t, ring, ring)
+)
+
+/*
+    * A point cloud type that has 6D pose info ([x,y,z,roll,pitch,yaw] intensity is time stamp)
+    */
+struct PointXYZIRPYT
+{
+    PCL_ADD_POINT4D
+    PCL_ADD_INTENSITY;
+    float roll;
+    float pitch;
+    float yaw;
+    double time;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
+
+POINT_CLOUD_REGISTER_POINT_STRUCT (PointXYZIRPYT,
+                                   (float, x, x) (float, y, y)
+                                   (float, z, z) (float, intensity, intensity)
+                                   (float, roll, roll) (float, pitch, pitch) (float, yaw, yaw)
+                                   (double, time, time)
+)
+
+typedef PointXYZIRPYT  PointTypePose;
+
+
 class VoronoiPlanner
 {
 public:
@@ -138,20 +181,64 @@ public:
   void init();
   void run();
   void CallbackPoints(const sensor_msgs::PointCloud2ConstPtr& msg);
-  void CallbackPredictivePath(const visualization_msgs::MarkerConstPtr &msg);
-
+  void CallbackAckermann(const ackermann_msgs::AckermannDriveStampedConstPtr& msg);
+  void projectPointCloud();
+  void filteringCloseToPath(const sensor_msgs::PointCloud2ConstPtr& msg);
+  void resetMemory();
+  void groundRemoval();
 private:
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
 
   ros::Publisher PubOutlierFilteredPoints;
+  ros::Publisher PubGroundPoints, PubGroundRemovedPoints;
   ros::Subscriber SubPoints;
-  ros::Subscriber SubPredictivePath;
+  ros::Subscriber SubVehicleState;
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr m_OutlierFilteredCloud;
-  std::shared_ptr<visualization_msgs::Marker> m_PredictivePath_ptr;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr m_RawSensorCloud_ptr;
+  pcl::PointCloud<PointXYZIR>::Ptr m_laserCloudInRing;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr m_fullCloud; // projected velodyne raw cloud, but saved in the form of 1-D matrix
+  pcl::PointCloud<pcl::PointXYZI>::Ptr m_GroundRemovedCloud;
+
+
   bool bPredictivePath;
+  bool bVehicleState;
+
+  double m_NeglectableArea;  
+  double m_tooCloseArea;
+  double m_CloseToPredictivePath;
+  double m_radius;
+  double m_WheelBase;
+  bool m_useCloudRing;
+
+  geometry_msgs::Point point_prev;
+  std::vector<geometry_msgs::Point> m_PredictivePoints;
+
+  // VLP-16
+  const int N_SCAN = 16;
+  const int Horizon_SCAN = 1800;
+  const float ang_res_x = 0.2;
+  const float ang_res_y = 2.0;
+  const float ang_bottom = 15.0+0.1;
+  const int groundScanInd = 5; //7
+
+  const float sensorMinimumRange = 1.0;
+  const float sensorMountAngle = 0.0;
+  const float segmentTheta = 60.0/180.0*M_PI; // decrese this value may improve accuracy
+  const int segmentValidPointNum = 5;
+  const int segmentValidLineNum = 3;
+  const float segmentAlphaX = ang_res_x / 180.0 * M_PI;
+  const float segmentAlphaY = ang_res_y / 180.0 * M_PI;
+  
+  const int edgeFeatureNum = 2;
+  const int surfFeatureNum = 4;
+  const int sectionsTotal = 6;
+  const float edgeThreshold = 0.1;
+  const float surfThreshold = 0.1;
+  const float nearestFeatureSearchSqDist = 25;
 };
+
 
 #endif  // VORONOI_PLANNER_H
